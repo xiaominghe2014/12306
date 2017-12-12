@@ -2,17 +2,20 @@
 # -*- coding: UTF-8 -*-
 
 """
-@version: 0.0.0
+@version: ??
 @author: xiaoming
 @license: MIT Licence 
 @contact: xiaominghe2014@gmail.com
 @site: 
 @software: PyCharm
-@file: net_spider.py
+@file: query_trains.py
 @time: 2017/12/10 下午10:19
 
 """
 import sys
+from sys import argv
+import time
+from time import strftime
 import json
 import re
 import requests
@@ -39,10 +42,11 @@ def query_train_url(tel_code, from_station, to_station, date):
                         tel_code.get(to_station.decode('utf-8')))
 
 
-def get_rains_list_and_place_map(from_station, to_station, date):
+def get_rains_list_and_place_map(g_from_station, g_to_station, date):
     s = requests.session()
     tel_code = get_tel_code()
-    resp = json.loads(s.get(query_train_url(tel_code, from_station, to_station, date), stream=True, verify=False).text)
+    resp = json.loads(s.get(query_train_url(tel_code, g_from_station, g_to_station, date),
+                            stream=True, verify=False).text)
     data = resp.get('data', '')
     train_list_r = data.get('result', '{}')
     place_map_r = data.get('map', '{}')
@@ -71,12 +75,12 @@ def get_rains_list_and_place_map(from_station, to_station, date):
         29.硬座
         26.无座
 @param place_map: 站点代号和名称对应等map
-@return buy_list: 可购买的数据list,0 车次 1 商务座 2 一等座 3 二等座 4 高级软卧 5 软卧 6 动卧 7 硬卧 8 软座 9 硬座 10 无座
+@:return: 可购买的数据list,0 车次 1 商务座 2 一等座 3 二等座 4 高级软卧 5 软卧 6 动卧 7 硬卧 8 软座 9 硬座 10 无座
 '''
 
 
 def print_query_result(train_list, place_map):
-    buy_list = []
+    q_buy_list = []
     for raw_train in train_list:
         raw_train_list = raw_train.split('|')
         for idx in range(len(raw_train_list)):
@@ -97,18 +101,36 @@ def print_query_result(train_list, place_map):
             if raw_train_list[list_idx[i]] == '--':
                 raw_train_list[list_idx[i]] = '0'
             buy_list_item.append(raw_train_list[list_idx[i]])
-        buy_list.append(buy_list_item)
-    return buy_list
+        q_buy_list.append(buy_list_item)
+    return q_buy_list
 
 
-def query_trains(from_station, to_station, date):
+def sort_train_list(raw_train1, raw_train2):
+    train_list1 = raw_train1.split('|')
+    train_list2 = raw_train2.split('|')
+    word_map = {'D': 1, 'G': 2, 'T': 3, 'Z': 4, 'K': 5, 'L': 6}
+    k1, k2 = train_list1[3][0], train_list2[3][0]
+    v1, v2 = 100, 100
+    if k1 in word_map:
+        v1 = word_map[k1]
+    if k2 in word_map:
+        v2 = word_map[k2]
+    return v1-v2
+
+
+def query_trains(from_station_q, to_station_q, date):
     reload(sys)
     sys.setdefaultencoding('utf-8')
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    train_list, place_map = get_rains_list_and_place_map(from_station, to_station, date)
+    train_list, place_map = get_rains_list_and_place_map(from_station_q, to_station_q, date)
+    train_list.sort(sort_train_list)
     return print_query_result(train_list, place_map)
 
 
 if __name__ == '__main__':
-    buy_list = query_trains('北京', '上海', '2017-12-12')
-    print buy_list
+    lens = len(argv)
+    from_station = '上海'
+    to_station = '杭州'
+    train_date = strftime('%Y-%m-%d', time.localtime(time.time()))
+    buy_list = query_trains(lens > 1 and argv[1] or from_station, lens > 2 and argv[2] or to_station,
+                            lens > 3 and argv[3] or train_date)
