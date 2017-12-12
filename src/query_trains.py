@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-@version: ??
+@version: 0.0.0
 @author: xiaoming
 @license: MIT Licence 
 @contact: xiaominghe2014@gmail.com
@@ -20,6 +20,7 @@ import json
 import re
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from prettytable import PrettyTable
 
 
 def get_tel_code():
@@ -53,34 +54,11 @@ def get_rains_list_and_place_map(g_from_station, g_to_station, date):
     return train_list_r, place_map_r
 
 
-'''
-@param train_list:
-        13.日期
-        3.车次
-        4.起点站
-        5.终点站
-        6,7.过站
-        8.出发时间
-        9.到达时间
-        10.历时
-
-        32.商务座
-        31.一等座
-        30.二等座
-        21.高级软卧
-        23.软卧
-        33.动卧
-        28.硬卧
-        24.软座
-        29.硬座
-        26.无座
-@param place_map: 站点代号和名称对应等map
-@:return: 可购买的数据list,0 车次 1 商务座 2 一等座 3 二等座 4 高级软卧 5 软卧 6 动卧 7 硬卧 8 软座 9 硬座 10 无座
-'''
-
-
-def print_query_result(train_list, place_map):
-    q_buy_list = []
+def pretty_sort(train_list, place_map):
+    trains = PrettyTable()
+    trains.field_names = ['车次', '起点', '终点', '开始', '结束', '历时',
+                          '商务', '一等', '二等', '高级软卧', '软卧', '动卧', '硬卧',
+                          '软座', '硬座', '无座']
     for raw_train in train_list:
         raw_train_list = raw_train.split('|')
         for idx in range(len(raw_train_list)):
@@ -88,21 +66,20 @@ def print_query_result(train_list, place_map):
                 raw_train_list[idx] = '--'
         for i in range(4):
             raw_train_list[4 + i] = place_map.get(raw_train_list[4 + i], '')
-
-        print '日期:{0[13]} 车次:{0[3]} 起点:{0[4]} 终点:{0[5]} 过:{0[6]},{0[7]} ' \
-              '始发:{0[8]} 到达:{0[9]} 历时:{0[10]}'.format(raw_train_list)
-        print '商务座:{0[32]} 一等座:{0[31]} 二等座:{0[30]} 高级软卧:{0[21]} 软卧:{0[23]} 动卧:{0[33]} 硬卧:{0[28]} ' \
-              '软座:{0[24]} 硬座:{0[29]} 无座:{0[26]}'.format(raw_train_list)
-        print '-----------------------------------------------' \
-              '-----------------------------------------------'
-        buy_list_item = [raw_train_list[3]]
-        list_idx = [32, 31, 30, 21, 23, 33, 28, 24, 29, 26]
-        for i in range(len(list_idx)):
-            if raw_train_list[list_idx[i]] == '--':
-                raw_train_list[list_idx[i]] = '0'
-            buy_list_item.append(raw_train_list[list_idx[i]])
-        q_buy_list.append(buy_list_item)
-    return q_buy_list
+        if raw_train_list[4]:
+            raw_train_list[4] = '(始)' + raw_train_list[4]
+        else:
+            raw_train_list[4] = '(过)' + raw_train_list[6]
+        if raw_train_list[5]:
+            raw_train_list[5] = '(终)' + raw_train_list[5]
+        else:
+            raw_train_list[5] = '(过)' + raw_train_list[7]
+        trains.add_row([raw_train_list[3], raw_train_list[4], raw_train_list[5],
+                        raw_train_list[8], raw_train_list[9], raw_train_list[10],
+                        raw_train_list[32], raw_train_list[31], raw_train_list[30], raw_train_list[21],
+                        raw_train_list[23], raw_train_list[33], raw_train_list[28], raw_train_list[24],
+                        raw_train_list[29], raw_train_list[26]])
+    return trains
 
 
 def sort_train_list(raw_train1, raw_train2):
@@ -124,7 +101,7 @@ def query_trains(from_station_q, to_station_q, date):
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     train_list, place_map = get_rains_list_and_place_map(from_station_q, to_station_q, date)
     train_list.sort(sort_train_list)
-    return print_query_result(train_list, place_map)
+    return pretty_sort(train_list, place_map)
 
 
 if __name__ == '__main__':
@@ -132,5 +109,7 @@ if __name__ == '__main__':
     from_station = '上海'
     to_station = '杭州'
     train_date = strftime('%Y-%m-%d', time.localtime(time.time()))
-    buy_list = query_trains(lens > 1 and argv[1] or from_station, lens > 2 and argv[2] or to_station,
-                            lens > 3 and argv[3] or train_date)
+    print query_trains(lens > 1 and argv[1] or from_station,
+                       lens > 2 and argv[2] or to_station,
+                       lens > 3 and argv[3] or train_date)
+
