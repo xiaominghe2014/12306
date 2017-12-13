@@ -81,7 +81,7 @@ def query_per_price(raw_train_list, date):
     s = requests.session()
     resp = s.get(query_train_price_url(raw_train_list[2], raw_train_list[16], raw_train_list[17],
                                        raw_train_list[35], date), headers=headers, stream=True, verify=False)
-    keys = ['A9', 'M', 'O', 'A6', 'A4', 'P', 'A3', 'A2', 'A1', 'WZ']
+    keys = ['A9', 'M', 'O', 'A6', 'A4', 'F', 'A3', 'A2', 'A1', 'WZ']
     try:
         '''A1	硬座  
            A2	软座   
@@ -89,7 +89,7 @@ def query_per_price(raw_train_list, date):
            A4	软卧   
            A6	高级软卧 
            A9	商务座  
-           P	动卧  
+           F	动卧  
            M	一等座  
            O	二等座  
            WZ	无座   
