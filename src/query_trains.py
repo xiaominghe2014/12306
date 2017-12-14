@@ -45,6 +45,8 @@ def pretty_sort(train_list_pretty, place_map, list_price):
         for idx in range(len(raw_train_list)):
             if not raw_train_list[idx]:
                 raw_train_list[idx] = '--'
+            elif '无'== raw_train_list[idx]:
+                raw_train_list[idx] = '--'
             # print idx, raw_train_list[idx]
         for i in range(4):
             raw_train_list[4 + i] = place_map.get(raw_train_list[4 + i], '')
@@ -57,6 +59,23 @@ def pretty_sort(train_list_pretty, place_map, list_price):
                         raw_train_list[28]+list_price[ldx][6], raw_train_list[24]+list_price[ldx][7],
                         raw_train_list[29]+list_price[ldx][8], raw_train_list[26]+list_price[ldx][9]])
     return trains
+
+
+def get_trains(train_list):
+    data_trains = []
+    for ldx, raw_train in enumerate(train_list):
+        raw_train_list = raw_train.split('|')
+        raw_train_list[0] = unquote(raw_train_list[0])
+        for idx in range(len(raw_train_list)):
+            if not raw_train_list[idx]:
+                raw_train_list[idx] = '--'
+            elif '无'== raw_train_list[idx]:
+                raw_train_list[idx] = '--'
+        for i in e_seat_idx:
+            if '--' != raw_train_list[i]:
+                data_trains.append(raw_train_list)
+                break
+    return data_trains
 
 
 def sort_train_list(raw_train1, raw_train2):
@@ -74,7 +93,8 @@ def query_trains(from_station_q, to_station_q, date):
     sys.setdefaultencoding('utf-8')
     train_list, place_map = get_rains_list_and_place_map(from_station_q, to_station_q, date)
     train_list.sort(sort_train_list)
-    return pretty_sort(train_list, place_map, query_price(train_list, date))
+    print pretty_sort(train_list, place_map, query_price(train_list, date))
+    return get_trains(train_list)
 
 
 def query_per_price(raw_train_list, date):
@@ -112,7 +132,9 @@ if __name__ == '__main__':
     from_station = '上海'
     to_station = '杭州'
     train_date = strftime('%Y-%m-%d', time.localtime(time.time()))
-    print query_trains(lens > 1 and argv[1] or from_station,
-                       lens > 2 and argv[2] or to_station,
-                       lens > 3 and argv[3] or train_date)
+    trains_data = query_trains(lens > 1 and argv[1] or from_station,
+                               lens > 2 and argv[2] or to_station,
+                               lens > 3 and argv[3] or train_date)
+    # for item in trains_data:
+    #     print item
 
