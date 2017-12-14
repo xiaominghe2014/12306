@@ -83,6 +83,46 @@ class Login12306(object):
         else:
             self.req_login()
 
+    def check_user(self):
+        return True
+
+    def get_order(self):
+        return True
+
+    def get_token(self):
+        return True
+
+    def get_passenger(self):
+        return True
+
+    def check_order(self):
+        return True
+
+    def get_queue_count(self):
+        return True
+
+    def post_buy(self):
+        return True
+
+    def get_order_no(self):
+        pass
+
+    def auto_req_order(self, trains):
+        print trains
+        res = self.check_user()
+        if res:
+            submit_success = self.get_order()
+            if submit_success:
+                is_get = self.get_token()
+                if is_get:
+                    get_pass = self.get_passenger()
+                    if get_pass:
+                        is_checked = self.check_order()
+                        if is_checked:
+                            if self.get_queue_count():
+                                if self.post_buy():
+                                    self.get_order_no()
+
 
 if __name__ == '__main__':
     Login12306().req_login()
