@@ -22,6 +22,7 @@ class Login12306(object):
     def __init__(self):
         self.request_img = True
         self.session = requests.session()
+        self.tk = ''
 
     def get_verify_img(self):
         if self.request_img:
@@ -47,6 +48,21 @@ class Login12306(object):
         # self.request_img = '7' == code
         return '4' == code
 
+    def get_apptk(self, cb):
+        data = {'appid' : 'otn'}
+        resp = self.session.post(url_get_newapptk, headers=headers, data=data)
+        if 200 == resp.status_code:
+            result = json.loads(resp.text)
+            print(result.get("result_message"))
+            self.tk = result.get("newapptk")
+            cb()
+
+    def check_apptk(self):
+        data = {'tk': self.tk}
+        resp = self.session.post(url_check_tk, headers=headers, data=data)
+        if 200 == resp.status_code:
+            print(resp.text)
+
     def login(self):
         name = raw_input('用户名:')
         pwd = getpass.getpass('密码:')
@@ -57,6 +73,8 @@ class Login12306(object):
         result = dic['result_code']
         if 0 != result:
             self.login()
+        else:
+            self.get_apptk(self.check_apptk)
 
     def req_login(self):
         is_verify = self.check_verify_img(self.get_verify_img())

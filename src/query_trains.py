@@ -18,9 +18,9 @@ import time
 from time import strftime
 import json
 from get_trains_data import *
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from prettytable import PrettyTable
-
+import urllib
+from urllib import unquote
 
 def get_rains_list_and_place_map(g_from_station, g_to_station, date):
     s = requests.session()
@@ -41,13 +41,14 @@ def pretty_sort(train_list_pretty, place_map, list_price):
     for ldx, raw_train in enumerate(train_list):
 
         raw_train_list = raw_train.split('|')
+        raw_train_list[0] = unquote(raw_train_list[0])
         for idx in range(len(raw_train_list)):
             if not raw_train_list[idx]:
                 raw_train_list[idx] = '--'
             # print idx, raw_train_list[idx]
         for i in range(4):
             raw_train_list[4 + i] = place_map.get(raw_train_list[4 + i], '')
-        trains.add_row([raw_train_list[3], (raw_train_list[4] and '(始)' or '(过)') + raw_train_list[6],
+        trains.add_row([raw_train_list[e_train.name], (raw_train_list[4] and '(始)' or '(过)') + raw_train_list[6],
                         (raw_train_list[5] and '(终)' or '(过)') + raw_train_list[7], raw_train_list[8],
                         raw_train_list[9], raw_train_list[10],
                         raw_train_list[32]+list_price[ldx][0], raw_train_list[31]+list_price[ldx][1],
@@ -71,29 +72,21 @@ def sort_train_list(raw_train1, raw_train2):
 def query_trains(from_station_q, to_station_q, date):
     reload(sys)
     sys.setdefaultencoding('utf-8')
-    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     train_list, place_map = get_rains_list_and_place_map(from_station_q, to_station_q, date)
     train_list.sort(sort_train_list)
     return pretty_sort(train_list, place_map, query_price(train_list, date))
 
 
 def query_per_price(raw_train_list, date):
+    keys = [e_seat.SW, e_seat.ONE, e_seat.TWO, e_seat.GJRW, e_seat.YW,
+            e_seat.DW, e_seat.YW, e_seat.RZ, e_seat.YZ, e_seat.WZ]
+    if price_ignore:
+        return map(lambda x: '', range(10))
     s = requests.session()
     resp = s.get(query_train_price_url(raw_train_list[2], raw_train_list[16], raw_train_list[17],
                                        raw_train_list[35], date), headers=headers, stream=True, verify=False)
-    keys = ['A9', 'M', 'O', 'A6', 'A4', 'F', 'A3', 'A2', 'A1', 'WZ']
+
     try:
-        '''A1	硬座  
-           A2	软座   
-           A3	硬卧   
-           A4	软卧   
-           A6	高级软卧 
-           A9	商务座  
-           F	动卧  
-           M	一等座  
-           O	二等座  
-           WZ	无座   
-        '''
         data = json.loads(resp.text)['data']
         price = []
         for i in range(len(keys)):
@@ -102,10 +95,7 @@ def query_per_price(raw_train_list, date):
     except Exception as e:
         print e
         # query_per_price(raw_train_list, date)
-        price = []
-        for i in range(len(keys)):
-            price.append('')
-        return price
+        return map(lambda x: '', range(10))
 
 
 def query_price(train_list_price, date):
