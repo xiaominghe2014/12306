@@ -19,8 +19,8 @@ from time import strftime
 import json
 from get_trains_data import *
 from prettytable import PrettyTable
-import urllib
 from urllib import unquote
+
 
 def get_rains_list_and_place_map(g_from_station, g_to_station, date):
     s = requests.session()

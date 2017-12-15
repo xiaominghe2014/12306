@@ -16,17 +16,31 @@
 from get_trains_data import *
 import json
 import getpass
-
+import datetime
+import time
+from time import strftime
 
 class Login12306(object):
+
     def __init__(self):
         self.request_img = True
         self.session = requests.session()
         self.tk = ''
+        self.train_map=None
+        self.token = ''
+        self.key_check_isChange = ''
+        self.passengers = []
+        self.seatType = '1'
+
+    def get(self, arg_url):
+        return self.session.get(url=arg_url, headers=headers, verify=False)
+
+    def post(self, arg_url, data):
+        return self.session.post(url=arg_url, data=data, headers=headers, verify=False)
 
     def get_verify_img(self):
         if self.request_img:
-            resp = self.session.get(url=url_verify_img, headers=headers, verify=False)
+            resp = self.get(url_verify_img)
             with open('../img/img.jpg', 'wb') as f:
                 f.write(resp.content)
                 # self.request_img = False
@@ -40,9 +54,8 @@ class Login12306(object):
             answer_list.append(img_area[int(verify_res[i])-1])
         answer = ','.join(answer_list)
         data = {'login_site': 'E', 'rand': 'sjrand', 'answer': answer}
-        cont = self.session.post(url=url_verify_img_check, data=data, headers=headers, verify=False)
+        cont = self.post(url_verify_img_check, data)
         dic = json.loads(cont.content)
-        print dic
         code = dic['result_code']
         # 取出验证结果，4：成功  5：验证失败  7：过期
         # self.request_img = '7' == code
@@ -50,7 +63,7 @@ class Login12306(object):
 
     def get_apptk(self, cb):
         data = {'appid' : 'otn'}
-        resp = self.session.post(url_get_newapptk, headers=headers, data=data)
+        resp = self.post(url_get_newapptk, data)
         if 200 == resp.status_code:
             result = json.loads(resp.text)
             print(result.get("result_message"))
@@ -59,7 +72,7 @@ class Login12306(object):
 
     def check_apptk(self):
         data = {'tk': self.tk}
-        resp = self.session.post(url_check_tk, headers=headers, data=data)
+        resp = self.post(url_check_tk, data)
         if 200 == resp.status_code:
             print(resp.text)
 
@@ -67,7 +80,7 @@ class Login12306(object):
         name = raw_input('用户名:')
         pwd = getpass.getpass('密码:')
         data = {'username': name, 'password': pwd, 'appid': 'otn'}
-        result = self.session.post(url=url_login, data=data, headers=headers, verify=False)
+        result = self.post(url_login, data)
         dic = json.loads(result.content)
         print dic
         result = dic['result_code']
@@ -84,24 +97,104 @@ class Login12306(object):
             self.req_login()
 
     def check_user(self):
-        return True
+        data = {'_json_att': ''}
+        resp = self.post(url_check_usr, data)
+        if 200 == resp.status_code:
+            result = json.loads(resp.text)
+            return result['data']['flag']
+        return False
 
-    def get_order(self):
-        return True
+    def get_order(self, arg_train):
+        if not self.train_map:
+            self.train_map = get_tel_code()
+        data = {
+            'secretStr': arg_train[e_train.secretStr],
+            'train_date': datetime.strptime(arg_train[e_train.date], '%Y-%m-%d')
+            'back_train_date':'2017-12-25',
+            'tour_flag':'dc',
+            'purpose_codes':'ADULT',
+            'query_from_station_name':self.train_map[arg_train[e_train.from_station]],
+            'query_to_station_name':self.train_map[arg_train[e_train.to_station]],
+            'undefined':''
+        }
+        resp = self.post(url_get_order, data)
+        return 200 == resp.status_code
 
     def get_token(self):
-        return True
+        data = {'_json_att':''}
+        resp = self.post(url_get_token, data)
+        if 200 == resp.status_code:
+            token_txt = get_txt_by_re(resp.text, r'var globalRepeatSubmitToken = \'(.*?)\'')
+            self.token = token_txt.group(1)
+            check_txt = get_txt_by_re(resp.text, r'\'key_check_isChange\':\'(.*?)\'')
+            self.key_check_isChange = check_txt.group(1)
+            return True
+        return False
 
     def get_passenger(self):
+        data = {'_json_att': '','REPEAT_SUBMIT_TOKEN':self.token}
+        resp = self.post(url_passengerDTOs, data)
+        if 200 == resp.status_code:
+            js = json.loads(resp.text)
+            self.passengers = js['data']['normal_passengers']
+            return True
+        return False
+
+    def get_buy_img(self):
+        if self.request_img:
+            resp = self.get(url_get_buy_img)
+            with open('../img/img.jpg', 'wb') as f:
+                f.write(resp.content)
         return True
+
+    def get_passenger_ticket(self):
+        passenger = self.passengers[0]
+        return '%s,0,1,%s,%,%s,%s,N' % (self.seatType, passenger['passenger_name'], passenger['passenger_id_type_code'],
+                                       passenger['passenger_id_no'], passenger['mobile_no'])
+
+    def get_old_passenger(self):
+        passenger = self.passengers[0]
+        return '%s,%s,%s,%s_' % (passenger['passenger_name'], passenger['passenger_id_type_code'],
+                                  passenger['passenger_id_no'], passenger['passenger_type'])
 
     def check_order(self):
-        return True
+        data = {
+            'cancel_flag':2,
+            'bed_level_order_num':'000000000000000000000000000000',
+            'passengerTicketStr':self.get_passenger_ticket(),
+            'oldPassengerStr':self.get_old_passenger(),
+            'tour_flag':'dc',
+            'randCode':'',
+            '_json_att':'',
+            'REPEAT_SUBMIT_TOKEN':self.token
+        }
+        resp = self.post(url_check_order, data)
+        if 200 == resp.status_code:
+            return True
+        return False
 
-    def get_queue_count(self):
-        return True
+    def get_queue_count(self, arg_train):
+        train_date = strftime('%a %b %d %Y %H:%M:%S GMT+0800 (CST)', time.strptime(arg_train[e_train.date], '%Y%m%d'))
+        data = {
+            'train_date':train_date,
+            'train_no':arg_train[e_train.no],
+            'stationTrainCode':arg_train[e_train.name],
+            'seatType':self.seatType,
+            'fromStationTelecode':arg_train[e_train.from_station],
+            'toStationTelecode':arg_train[e_train.to_station],
+            'leftTicket':arg_train[e_train.leftTicket],
+            'purpose_codes':'00',
+            'train_location':arg_train[e_train.train_location],
+            '_json_att':'',
+            'REPEAT_SUBMIT_TOKEN':self.token
+        }
+        resp = self.post(url_getQueueCount, data)
+        if 200==resp.status_code:
+            return True
+        return False
 
     def post_buy(self):
+        data = {}
         return True
 
     def get_order_no(self):
@@ -111,7 +204,7 @@ class Login12306(object):
         print trains
         res = self.check_user()
         if res:
-            submit_success = self.get_order()
+            submit_success = self.get_order(trains[0])
             if submit_success:
                 is_get = self.get_token()
                 if is_get:
@@ -119,9 +212,12 @@ class Login12306(object):
                     if get_pass:
                         is_checked = self.check_order()
                         if is_checked:
-                            if self.get_queue_count():
+                            if self.get_queue_count(trains[0]):
                                 if self.post_buy():
                                     self.get_order_no()
+        else:
+            self.req_login()
+            self.auto_req_order(trains)
 
 
 if __name__ == '__main__':

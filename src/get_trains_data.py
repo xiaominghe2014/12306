@@ -182,6 +182,14 @@ e_seat = enum(SW='A9', ONE='M', TWO='O',
               GJRW='A6', RW='A4', DW='F',
               YW='A3', RZ='A2', YZ='A1', WZ='WZ')
 e_seat_idx = [21, 23, 24, 26, 28, 29, 30, 31, 32, 33]
+# 1硬座 3硬卧 4软卧
+e_seat_type = [1, 3, 4]
+# 随机 下 中 上
+e_bed_type = [0, 1, 2, 3]
+
+
+def get_txt_by_re(arg_txt, arg_pattern):
+    return re.search(arg_pattern, arg_txt)
 
 
 def get_tel_code():
@@ -191,6 +199,15 @@ def get_tel_code():
     tel_code_map = {}
     map(lambda x: tel_code_map.setdefault(x[0], x[1]), stations)
     return tel_code_map
+
+
+def get_train_name():
+    url = url_station
+    response = requests.get(url, verify=False)
+    stations = re.findall(u'([\u4e00-\u9fa5]+)\|([A-Z]+)', response.text)
+    tel_name_map = {}
+    map(lambda x: tel_name_map.setdefault(x[1], x[2]), stations)
+    return tel_name_map
 
 
 def query_train_url(tel_code, from_s, to_s, date):
@@ -212,3 +229,4 @@ def query_train_price_url(train_no, from_station_no, to_station_no, seat_types, 
                 '&seat_types=%s' \
                 '&train_date=%s'
     return query_url % (train_no, from_station_no, to_station_no, seat_types, train_date)
+
