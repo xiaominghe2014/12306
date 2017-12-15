@@ -1,10 +1,14 @@
 # 火车票脚本
 
+## 依赖模块安装
+```bash
+sudo python setup.py install
+```
 ## 查询
 
 
 ```bash
-python query_trains.py [出发站点] [目的站点] [日期]
+python src/query_trains.py [出发站点] [目的站点] [日期]
 ```
 
 ![test](./img/test.png)
@@ -12,14 +16,14 @@ python query_trains.py [出发站点] [目的站点] [日期]
 ## 登录
 
 ```bash
-python request_login.py 
+python src/request_login.py 
 ```
 
 ## 自动下单
 ### Usage:
 
 ```bash
-    auto_get_order.py [-f] FROM_STATION [-t] TO_STATION [-d] DATE [-c] TRAIN_CODE [-s] SEAT_TYPE
+python    src/auto_get_order.py [-f] FROM_STATION [-t] TO_STATION [-d] DATE [-c] TRAIN_CODE [-s] SEAT_TYPE
 ```
 
 ### Arguments:
@@ -43,5 +47,5 @@ python request_login.py
 
 ### Example:
 ```bash
-    auto_get_order.py -f 上海 -t 成都 -d 2017-12-25 -c DGTZK -s 012345678
+    python src/auto_get_order.py -f 上海 -t 成都 -d 2017-12-25 -c DGTZK -s 012345678
 ```    
