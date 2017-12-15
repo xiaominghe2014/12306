@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-@version: ??
+@version: 0.0.0
 @author: xiaoming
 @license: MIT Licence 
 @contact: xiaominghe2014@gmail.com
@@ -181,7 +181,7 @@ e_train = enum(secretStr=0,
 e_seat = enum(SW='A9', ONE='M', TWO='O',
               GJRW='A6', RW='A4', DW='F',
               YW='A3', RZ='A2', YZ='A1', WZ='WZ')
-e_seat_idx = [21, 23, 24, 26, 28, 29, 30, 31, 32, 33]
+e_seat_idx = [32, 31, 30, 21, 23, 33, 28, 24, 29, 26]
 # 1硬座 3硬卧 4软卧
 e_seat_type = [1, 3, 4]
 # 随机 下 中 上

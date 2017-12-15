@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-@version: ??
+@version: 0.0.0
 @author: xiaoming
 @license: MIT Licence 
 @contact: xiaominghe2014@gmail.com
@@ -40,14 +40,34 @@ from request_login import *
 from query_trains import *
 
 
+# 获取列车信息
 def get_train_info(arg_from_station, arg_to_station, arg_date):
     return query_trains(arg_from_station, arg_to_station, arg_date)
 
 
+# 根据座次和车型筛选
 def filter_train_info(arg_trains_info, arg_code, arg_seat):
     arg_code_list = map(lambda x: arg_code[x], range(len(arg_code)))
     arg_seat_list = map(lambda x: e_seat_idx[int(arg_seat[x])], range(len(arg_seat)))
     print arg_code_list, arg_seat_list
+    start = 0
+    while start < len(arg_trains_info):
+        item = arg_trains_info[start]
+        if item[e_train.name][0] not in arg_code_list:
+            arg_trains_info.remove(item)
+            start -= 1
+        start += 1
+    start = 0
+    while start < len(arg_trains_info):
+        item = arg_trains_info[start]
+        for i in range(len(arg_seat_list)):
+            if item[arg_seat_list[i]] != '--':
+                continue
+            elif len(arg_seat_list)-1 == i:
+                arg_trains_info.remove(item)
+                start -= 1
+                break
+        start += 1
     return arg_trains_info
 
 
@@ -61,3 +81,4 @@ if __name__ == '__main__':
     train_info = filter_train_info(get_train_info(from_station, to_station, date), code, seat)
     if 0 < len(train_info):
         Login12306().auto_req_order(train_info)
+

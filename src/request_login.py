@@ -2,11 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 """
-@version: ??
+@version: 0.0.0
 @author: xiaoming
 @license: MIT Licence 
 @contact: xiaominghe2014@gmail.com
-@site: 
+@todo: 详情见代码列表
 @software: PyCharm
 @file: request_login.py
 @time: 2017/12/13 下午2:27
@@ -26,10 +26,11 @@ class Login12306(object):
         self.request_img = True
         self.session = requests.session()
         self.tk = ''
-        self.train_map=None
+        self.train_map = None
         self.token = ''
         self.key_check_isChange = ''
         self.passengers = []
+        # todo 根据相应的列车信息筛选座位类型
         self.seatType = '1'
 
     def get(self, arg_url):
@@ -109,19 +110,19 @@ class Login12306(object):
             self.train_map = get_tel_code()
         data = {
             'secretStr': arg_train[e_train.secretStr],
-            'train_date': datetime.strptime(arg_train[e_train.date], '%Y-%m-%d')
-            'back_train_date':'2017-12-25',
-            'tour_flag':'dc',
-            'purpose_codes':'ADULT',
-            'query_from_station_name':self.train_map[arg_train[e_train.from_station]],
-            'query_to_station_name':self.train_map[arg_train[e_train.to_station]],
-            'undefined':''
+            'train_date': datetime.strptime(arg_train[e_train.date], '%Y-%m-%d'),
+            'back_train_date': '2017-12-25',
+            'tour_flag': 'dc',
+            'purpose_codes': 'ADULT',
+            'query_from_station_name': self.train_map[arg_train[e_train.from_station]],
+            'query_to_station_name': self.train_map[arg_train[e_train.to_station]],
+            'undefined': ''
         }
         resp = self.post(url_get_order, data)
         return 200 == resp.status_code
 
     def get_token(self):
-        data = {'_json_att':''}
+        data = {'_json_att': ''}
         resp = self.post(url_get_token, data)
         if 200 == resp.status_code:
             token_txt = get_txt_by_re(resp.text, r'var globalRepeatSubmitToken = \'(.*?)\'')
@@ -132,7 +133,7 @@ class Login12306(object):
         return False
 
     def get_passenger(self):
-        data = {'_json_att': '','REPEAT_SUBMIT_TOKEN':self.token}
+        data = {'_json_att': '', 'REPEAT_SUBMIT_TOKEN': self.token}
         resp = self.post(url_passengerDTOs, data)
         if 200 == resp.status_code:
             js = json.loads(resp.text)
@@ -147,58 +148,99 @@ class Login12306(object):
                 f.write(resp.content)
         return True
 
+    def check_buy_img(self):
+        verify_res = raw_input('请输入验证码位置(1-8):')
+        img_area = ['35,35', '105,35', '175,35', '245,35', '35,105', '105,105', '175,105', '245,105']
+        answer_list = []
+        for i in range(len(verify_res)):
+            answer_list.append(img_area[int(verify_res[i])-1])
+        answer = ','.join(answer_list)
+        data = {'rand': 'randp', 'randCode': answer, 'json_att': '', 'REPEAT_SUBMIT_TOKEN': self.token}
+        cont = self.post(url_post_buy_code, data)
+        js = json.loads(cont.content)
+        code = js['data']['result']
+        return '1' == code
+
     def get_passenger_ticket(self):
         passenger = self.passengers[0]
         return '%s,0,1,%s,%,%s,%s,N' % (self.seatType, passenger['passenger_name'], passenger['passenger_id_type_code'],
-                                       passenger['passenger_id_no'], passenger['mobile_no'])
+                                        passenger['passenger_id_no'], passenger['mobile_no'])
 
     def get_old_passenger(self):
         passenger = self.passengers[0]
         return '%s,%s,%s,%s_' % (passenger['passenger_name'], passenger['passenger_id_type_code'],
-                                  passenger['passenger_id_no'], passenger['passenger_type'])
+                                 passenger['passenger_id_no'], passenger['passenger_type'])
 
     def check_order(self):
         data = {
-            'cancel_flag':2,
-            'bed_level_order_num':'000000000000000000000000000000',
-            'passengerTicketStr':self.get_passenger_ticket(),
-            'oldPassengerStr':self.get_old_passenger(),
-            'tour_flag':'dc',
-            'randCode':'',
-            '_json_att':'',
-            'REPEAT_SUBMIT_TOKEN':self.token
+            'cancel_flag': 2,
+            'bed_level_order_num': '000000000000000000000000000000',
+            'passengerTicketStr': self.get_passenger_ticket(),
+            'oldPassengerStr': self.get_old_passenger(),
+            'tour_flag': 'dc',
+            'randCode': '',
+            '_json_att': '',
+            'REPEAT_SUBMIT_TOKEN': self.token
         }
         resp = self.post(url_check_order, data)
         if 200 == resp.status_code:
+            # todo 此处根据ifShowPassCode添加验证是否需要验证码
             return True
         return False
 
     def get_queue_count(self, arg_train):
         train_date = strftime('%a %b %d %Y %H:%M:%S GMT+0800 (CST)', time.strptime(arg_train[e_train.date], '%Y%m%d'))
         data = {
-            'train_date':train_date,
-            'train_no':arg_train[e_train.no],
-            'stationTrainCode':arg_train[e_train.name],
-            'seatType':self.seatType,
-            'fromStationTelecode':arg_train[e_train.from_station],
-            'toStationTelecode':arg_train[e_train.to_station],
-            'leftTicket':arg_train[e_train.leftTicket],
-            'purpose_codes':'00',
-            'train_location':arg_train[e_train.train_location],
-            '_json_att':'',
-            'REPEAT_SUBMIT_TOKEN':self.token
+            'train_date': train_date,
+            'train_no': arg_train[e_train.no],
+            'stationTrainCode': arg_train[e_train.name],
+            'seatType': self.seatType,
+            'fromStationTelecode': arg_train[e_train.from_station],
+            'toStationTelecode': arg_train[e_train.to_station],
+            'leftTicket': arg_train[e_train.leftTicket],
+            'purpose_codes': '00',
+            'train_location': arg_train[e_train.train_location],
+            '_json_att': '',
+            'REPEAT_SUBMIT_TOKEN': self.token
         }
         resp = self.post(url_getQueueCount, data)
-        if 200==resp.status_code:
+        if 200 == resp.status_code:
             return True
         return False
 
-    def post_buy(self):
-        data = {}
-        return True
+    def post_buy(self, arg_train):
+        data = {'passengerTicketStr': self.get_passenger_ticket(),
+                'oldPassengerStr': self.get_old_passenger(),
+                'randCode': '',
+                'purpose_codes': '00',
+                'key_check_isChange': self.key_check_isChange,
+                'leftTicketStr': arg_train[e_train.leftTicket],
+                'train_location': arg_train[e_train.train_location],
+                'choose_seats': '',
+                'seatDetailType': '000',
+                'roomType': '00',
+                'dwAll': '',
+                '_json_att': '',
+                'REPEAT_SUBMIT_TOKEN': self.token
+                }
+        resp = self.post(url_post_buy, data)
+        if 200 == resp.status_code:
+            return True
+        return False
 
     def get_order_no(self):
-        pass
+        get_url = url_get_order_no % ('1513307920803',self.token)
+        resp = self.get(get_url)
+        if 200 == resp.status_code:
+            js = json.loads(resp.text)
+            order_id = js['data']['orderId']
+            if 'null' != order_id and order_id:
+                print '订票成功,请及时到网站支付...\n' \
+                      '订单号:%s' % order_id
+                return True
+            else:
+                return self.get_order_no()
+        return False
 
     def auto_req_order(self, trains):
         print trains
