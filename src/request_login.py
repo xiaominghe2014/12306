@@ -229,7 +229,8 @@ class Login12306(object):
         return False
 
     def get_order_no(self):
-        get_url = url_get_order_no % ('1513307920803',self.token)
+        get_url = url_get_order_no % (('%.3f' % (time.time())).replace('.', ''),
+                                      self.token)
         resp = self.get(get_url)
         if 200 == resp.status_code:
             js = json.loads(resp.text)
