@@ -15,7 +15,9 @@
 
 import re
 import requests
-
+from email.mime.text import MIMEText
+from subprocess import Popen
+from subprocess import PIPE
 # 禁用安全请求警告
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
@@ -23,6 +25,15 @@ disable_warnings(InsecureRequestWarning)
 
 # 查询忽略价格,便于快速查询
 price_ignore = True
+
+
+def send_mail(from_add, to_adds, txt_title, html_content):
+    msg = MIMEText(html_content, 'html', 'utf-8')
+    msg['From'] = from_add
+    msg['To'] = to_adds
+    msg['Subject'] = txt_title
+    p = Popen(['/usr/sbin/sendmail', '-t'], stdin=PIPE)
+    p.communicate(msg.as_string())
 
 
 def enum(**enums):

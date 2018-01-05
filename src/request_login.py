@@ -20,6 +20,7 @@ import datetime
 import time
 from time import strftime
 
+
 class Login12306(object):
 
     def __init__(self):
@@ -238,6 +239,8 @@ class Login12306(object):
             if 'null' != order_id and order_id:
                 print '订票成功,请及时到网站支付...\n' \
                       '订单号:%s' % order_id
+                # send_mail("xiaominghe2014@gmail.com", "229827701@qq.com", "订票成功",
+                # '订票成功,请及时到网站支付...\n订单号:%s' % order_id)
                 return True
             else:
                 return self.get_order_no()

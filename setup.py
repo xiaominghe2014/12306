@@ -24,6 +24,7 @@ setup(
     install_requires=[
         'requests',
         'docopt',
-        'prettytable'
+        'prettytable',
+        'email',
     ]
 )
