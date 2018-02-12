@@ -222,7 +222,7 @@ def get_train_name():
 
 
 def query_train_url(tel_code, from_s, to_s, date):
-    query_url = 'https://kyfw.12306.cn/otn/leftTicket/query?' \
+    query_url = 'https://kyfw.12306.cn/otn/leftTicket/queryZ?' \
                 'leftTicketDTO.train_date=%s' \
                 '&leftTicketDTO.from_station=%s' \
                 '&leftTicketDTO.to_station=%s' \
